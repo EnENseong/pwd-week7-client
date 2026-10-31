@@ -206,8 +206,8 @@ function AdminPage() {
                   <td>{r.location}</td>
                   <td>
                     <Actions>
-                      <Button onClick={() => onEdit(r)}>수정</Button>
-                      <Danger onClick={() => onDelete(r)}>삭제</Danger>
+                      <Button disabled title="이번 주 서버는 수정 API를 제공하지 않습니다." onClick={() => onEdit(r)}>수정</Button>
+                      <Danger disabled title="이번 주 서버는 삭제 API를 제공하지 않습니다." onClick={() => onDelete(r)}>삭제</Danger>
                     </Actions>
                   </td>
                 </tr>
