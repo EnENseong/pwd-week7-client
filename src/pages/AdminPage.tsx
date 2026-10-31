@@ -47,6 +47,11 @@ const Button = styled.button`
   background: white;
   cursor: pointer;
   &:hover { background: #f5f5f5; }
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    background: #f0f0f0;
+  }
 `;
 
 const Danger = styled(Button)`
@@ -60,6 +65,14 @@ const FormRow = styled.div`
   align-items: center;
   gap: 0.75rem;
   margin-bottom: 0.75rem;
+`;
+
+// 입력칸과 같은 열(2열)에 표시해 어떤 항목이 잘못됐는지 바로 보이게 합니다.
+const ErrorText = styled.p`
+  grid-column: 2;
+  margin: 0;
+  color: #d32f2f;
+  font-size: 0.85rem;
 `;
 
 const Input = styled.input`
@@ -84,6 +97,15 @@ const Select = styled.select`
   border-radius: 6px;
 `;
 
+// 서버는 실패 사유를 { error: { message } } 형태로 돌려줍니다.
+function getErrorMessage(error: unknown): string {
+  const response = (error as { response?: { data?: { error?: { message?: string } } } })?.response;
+  const serverMessage = response?.data?.error?.message;
+  if (typeof serverMessage === 'string' && serverMessage) return serverMessage;
+  if (error instanceof Error) return error.message;
+  return '알 수 없는 오류가 발생했습니다.';
+}
+
 function AdminPage() {
   const queryClient = useQueryClient();
   const [selected, setSelected] = useState<Restaurant | null>(null);
@@ -100,7 +122,7 @@ function AdminPage() {
     handleSubmit,
     reset,
     setValue,
-    formState: { isSubmitting },
+    formState: { isSubmitting, errors },
   } = useForm<RestaurantFormValues>();
 
   const createMutation = useMutation({
@@ -109,6 +131,9 @@ function AdminPage() {
       toast.success('생성 완료');
       queryClient.invalidateQueries({ queryKey: ['restaurants'] });
       reset();
+    },
+    onError: (error) => {
+      toast.error(`생성 실패: ${getErrorMessage(error)}`);
     },
   });
 
@@ -119,6 +144,9 @@ function AdminPage() {
       toast.success('수정 완료');
       queryClient.invalidateQueries({ queryKey: ['restaurants'] });
     },
+    onError: (error) => {
+      toast.error(`수정 실패: ${getErrorMessage(error)}`);
+    },
   });
 
   const deleteMutation = useMutation({
@@ -127,6 +155,9 @@ function AdminPage() {
       toast.info('삭제 완료');
       queryClient.invalidateQueries({ queryKey: ['restaurants'] });
       if (selected?.id) setSelected(null);
+    },
+    onError: (error) => {
+      toast.error(`삭제 실패: ${getErrorMessage(error)}`);
     },
   });
 
@@ -163,16 +194,25 @@ function AdminPage() {
       image: form.image?.trim() || undefined,
     };
 
-    if (selected?.id) {
-      await updateMutation.mutateAsync({ id: selected.id, payload });
-    } else {
-      await createMutation.mutateAsync(payload);
+    // 실패는 각 mutation의 onError가 토스트로 알리므로 여기서는 전파만 막습니다.
+    try {
+      if (selected?.id) {
+        await updateMutation.mutateAsync({ id: selected.id, payload });
+      } else {
+        await createMutation.mutateAsync(payload);
+      }
+    } catch {
+      // onError에서 처리 완료
     }
   };
 
   const onDelete = async (row: Restaurant) => {
     if (!confirm(`[삭제] ${row.name}을(를) 삭제할까요?`)) return;
-    await deleteMutation.mutateAsync(row.id);
+    try {
+      await deleteMutation.mutateAsync(row.id);
+    } catch {
+      // onError에서 처리 완료
+    }
   };
 
   const categories = useMemo(() => ['한식','중식','일식','양식','아시안','분식','카페','기타'], []);
@@ -222,6 +262,7 @@ function AdminPage() {
             <FormRow>
               <label htmlFor="name">이름 *</label>
               <Input id="name" {...register('name', { required: '이름은 필수입니다' })} />
+              {errors.name && <ErrorText role="alert">{errors.name.message}</ErrorText>}
             </FormRow>
             <FormRow>
               <label htmlFor="category">카테고리 *</label>
@@ -231,10 +272,12 @@ function AdminPage() {
                   <option key={c} value={c}>{c}</option>
                 ))}
               </Select>
+              {errors.category && <ErrorText role="alert">{errors.category.message}</ErrorText>}
             </FormRow>
             <FormRow>
               <label htmlFor="location">위치 *</label>
               <Input id="location" {...register('location', { required: '위치는 필수입니다' })} />
+              {errors.location && <ErrorText role="alert">{errors.location.message}</ErrorText>}
             </FormRow>
             <FormRow>
               <label htmlFor="priceRange">가격대</label>
