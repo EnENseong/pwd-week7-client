@@ -86,7 +86,8 @@ function DetailPage() {
       
       <h1>{restaurant.name}</h1>
       
-      <RestaurantImage src={restaurant.image} alt={restaurant.name} />
+      {/* image가 빈 문자열이면 <img src="">가 현재 페이지를 재요청하므로 렌더링하지 않습니다. */}
+      {restaurant.image && <RestaurantImage src={restaurant.image} alt={restaurant.name} />}
       
       <InfoSection>
         <h3>기본 정보</h3>
