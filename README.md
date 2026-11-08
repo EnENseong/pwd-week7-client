@@ -1,33 +1,63 @@
-# 📚 PWD Week 5 - React와 Vercel로 만드는 Ajou Campus Foodmap
+# 🍜 PWD Week 7 Client - Ajou Campus Foodmap
 
-> **2026년 2학기 실용 웹 개발 5주차**: React의 핵심 개념을 학습하고, 실제 작동하는 웹 서비스를 Vercel에 배포합니다.
-## 📋 강의 자료
-- [5주차 강의자료](https://ajou-hyunseok-oh.github.io/pwd-2026-2/)
-
----
+> **2026년 2학기 실전 웹서비스 개발**: 5주차에 만든 React 클라이언트를 7주차 Supabase 기반 Express API와 연동해 Vercel에 배포합니다.
 
 ## 🎯 프로젝트 소개
 
-### 만들게 될 서비스
 **아주 캠퍼스 푸드맵** - 아주대학교 주변 맛집을 소개하고 제보받는 커뮤니티 서비스
 
-### 주요 기능
-- 🍜 맛집 목록 보기
-- ❤️ 좋아요 기능 (LocalStorage)
-- 🔍 카테고리별 필터링
-- 📝 맛집 제보 (LocalStorage)
-- 🏆 인기 TOP 5
-- 📱 반응형 디자인
+### 데이터가 저장되는 위치
+
+| 기능 | 저장 위치 |
+|---|---|
+| 맛집 목록·상세·인기 조회 | Express API → **Supabase PostgreSQL** |
+| 맛집 등록 (`POST /api/restaurants`) | Express API → **Supabase PostgreSQL** |
+| 제보 작성·조회·승인 상태·삭제 | **브라우저 LocalStorage** |
+| 좋아요 | **브라우저 LocalStorage** |
+| 맛집 수정·삭제 | 서버에 해당 API 없음 → 관리자 버튼 비활성 |
+
+제보는 LocalStorage에 쌓이고, `#/submissions`에서 **승인**할 때 비로소 서버의 맛집 등록 API를 호출합니다.
+
+### 연동 구조
+
+```
+브라우저 → VITE_API_BASE_URL (Render의 Express)
+        → Supabase JS SDK → Data API(HTTPS)
+        → PostgreSQL public.restaurants
+```
 
 ### 사용 기술
 - **Frontend**: React 19 + TypeScript (strict 모드)
 - **Vite**: Build Tool
-- **Routing**: React Router v7
+- **Routing**: React Router v7 (HashRouter)
 - **Styling**: Emotion (CSS-in-JS)
 - **Forms**: React Hook Form
-- **State**: useState, useEffect
-- **Data**: 가상 맛집 데이터, LocalStorage, React Query
+- **Server State**: React Query (TanStack Query)
+- **HTTP**: axios
 - **Deployment**: Vercel
+
+### 환경변수
+
+| 이름 | 값 | 비고 |
+|---|---|---|
+| `VITE_API_BASE_URL` | Express 서버의 기본 URL | 끝에 `/api/restaurants`를 붙이지 않음 |
+
+로컬은 루트의 `.env.local`, 배포는 Vercel 프로젝트의 Environment Variables에 등록합니다.
+Vite의 `VITE_*` 값은 **빌드 시점에 번들로 들어가므로**, 값을 바꾸면 개발 서버 재시작 또는 재배포가 필요합니다.
+
+> ⚠️ Supabase Secret key는 서버 전용입니다. `VITE_*` 변수에 절대 넣지 마세요. 브라우저 번들에 그대로 노출됩니다.
+
+### 관련 저장소
+- 백엔드 서버: [`pwd-week7`](https://github.com/EnENseong/pwd-week7)
+
+---
+
+<details>
+<summary>📚 5주차 실습 가이드 (원본)</summary>
+
+아래는 이 프로젝트를 처음 만들 때 사용한 5주차 강의 자료입니다.
+
+- [5주차 강의자료](https://ajou-hyunseok-oh.github.io/pwd-2026-2/)
 
 ---
 
@@ -2222,3 +2252,5 @@ Vercel 빌드 설정은 자동으로 감지되지만, 확인 필요:
 
 *Last Updated: 2026.10.12*\
 *Created by: Hyunseok Oh - Ajou Digital Media Practical Web Service*
+
+</details>
